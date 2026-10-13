@@ -1,8 +1,36 @@
+use std::fmt::Display;
+
 use serde::Deserialize;
 
 use crate::util::platform_specific::{get_platform_name, platform_specific};
 
 use super::{command::Command, function_call::FunctionCall, param::Param};
+
+pub type TaskStatusCode = i32;
+
+#[derive(Debug, PartialEq)]
+pub struct TaskError {
+    pub message: String,
+    pub code: TaskStatusCode,
+}
+
+impl TaskError {
+    pub fn new(message: String, code: TaskStatusCode) -> Self {
+        Self { message, code }
+    }
+}
+
+impl From<String> for TaskError {
+    fn from(value: String) -> Self {
+        Self::new(value, 1)
+    }
+}
+
+impl Display for TaskError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
 
 /// yaml model
 #[derive(Debug, PartialEq, Deserialize, Clone)]
@@ -91,7 +119,7 @@ impl Task {
     /// ## Errors:
     /// - command parser error
     /// - command not found on platform
-    pub fn commands(&self) -> Result<Vec<Command>, String> {
+    pub fn commands(&self) -> Result<Vec<Command>, TaskError> {
         let commands = platform_specific(
             self.commands.as_ref(),
             self.commands_linux.as_ref(),
@@ -103,25 +131,25 @@ impl Task {
             commands
                 .iter()
                 .map(|x| Command::try_from(x.as_str()))
-                .collect::<Result<Vec<Command>, String>>()
+                .collect::<Result<Vec<Command>, TaskError>>()
         } else {
-            Err(format!("{} is not supported", get_platform_name()))
+            Err(format!("{} is not supported", get_platform_name()).into())
         }
     }
 
-    pub fn on_success(&self) -> Option<Result<FunctionCall, String>> {
+    pub fn on_success(&self) -> Option<Result<FunctionCall, TaskError>> {
         self.on_success
             .as_ref()
             .map(|value| FunctionCall::try_from(value.as_str()))
     }
 
-    pub fn on_error(&self) -> Option<Result<FunctionCall, String>> {
+    pub fn on_error(&self) -> Option<Result<FunctionCall, TaskError>> {
         self.on_error
             .as_ref()
             .map(|value| FunctionCall::try_from(value.as_str()))
     }
 
-    pub fn on_end(&self) -> Option<Result<FunctionCall, String>> {
+    pub fn on_end(&self) -> Option<Result<FunctionCall, TaskError>> {
         self.on_end
             .as_ref()
             .map(|value| FunctionCall::try_from(value.as_str()))
