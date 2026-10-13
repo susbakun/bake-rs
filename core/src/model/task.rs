@@ -167,3 +167,20 @@ impl Task {
         }
     }
 }
+
+#[cfg(test)]
+mod task_error_tests {
+    use super::*;
+
+    #[test]
+    fn from_string_defaults_to_code_1() {
+        let e: TaskError = "boom".to_string().into();
+        assert_eq!(e.code, 1);
+        assert_eq!(e.message, "boom");
+    }
+
+    #[test]
+    fn display_prints_message_only() {
+        assert_eq!(TaskError::new("boom".to_string(), 7).to_string(), "boom");
+    }
+}

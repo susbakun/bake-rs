@@ -217,9 +217,13 @@ tasks:
             )
         }
 
-        fn execute(&self, _: &str, _: Option<&str>) -> Result<(), TaskStatusCode> {
+        fn execute(&self, cmd: &str, _: Option<&str>) -> Result<(), TaskStatusCode> {
             Message::normal("done");
-            Ok(())
+            if cmd == "fail" {
+                Err(3)
+            } else {
+                Ok(())
+            }
         }
 
         fn open_link(&self, _: &str) {}
@@ -255,5 +259,26 @@ tasks:
             r.unwrap().get_task_at(0).unwrap().name(),
             "clean".to_string()
         );
+    }
+
+    #[test]
+    fn failing_shell_command_carries_exit_code() {
+        let bake = BakeViewModel::new(Rc::new(TestCap)).unwrap();
+
+        let err = bake
+            .run_command(&Command::ShellCommand("fail".to_string()), None)
+            .unwrap_err();
+
+        assert_eq!(err.code, 3);
+        assert!(err.message.contains("fail"));
+    }
+
+    #[test]
+    fn successful_shell_command_is_ok() {
+        let bake = BakeViewModel::new(Rc::new(TestCap)).unwrap();
+
+        assert!(bake
+            .run_command(&Command::ShellCommand("anything".to_string()), None)
+            .is_ok());
     }
 }
