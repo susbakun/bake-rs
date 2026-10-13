@@ -101,11 +101,9 @@ impl TaskViewModel {
             (Err(e), _, None) => {
                 // error but no on_error
                 if let Some(eh) = self.task.on_end() {
-                    self.print_error(&e.message);
                     self.handle_end(bake_view_model, eh?, EndHandler::OnEnd);
-                } else {
-                    return Err(e);
                 }
+                return Err(e);
             }
             (Ok((_, d)), Some(eh), _) => {
                 // success with on_success
